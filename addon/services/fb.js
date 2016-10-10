@@ -32,7 +32,6 @@ export default Ember.Service.extend({
       if (original) {
         window.fbAsyncInit = original;
         window.fbAsyncInit();
-        window.fbAsyncInit.hasRun = true;
       }
     });
 
