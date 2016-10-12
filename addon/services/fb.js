@@ -8,6 +8,8 @@ export default Ember.Service.extend({
     if (this.fbInitPromise) { return this.fbInitPromise; }
 
     const ENV = getOwner(this)._lookupFactory('config:environment');
+    const fastboot = getOwner(this)._lookupFactory('service:fastboot');
+    if (fastboot) { return; }
 
     if (ENV.FB && ENV.FB.skipInit) {
       this.fbInitPromise = Ember.RSVP.Promise.resolve('skip init');
