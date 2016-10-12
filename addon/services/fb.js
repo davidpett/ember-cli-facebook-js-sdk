@@ -5,11 +5,11 @@ export default Ember.Service.extend({
   fbInitPromise: null,
 
   FBInit() {
+    const fastboot = getOwner(this)._lookupFactory('service:fastboot');
+    if (fastboot) { return; }
     if (this.fbInitPromise) { return this.fbInitPromise; }
 
     const ENV = getOwner(this)._lookupFactory('config:environment');
-    const fastboot = getOwner(this)._lookupFactory('service:fastboot');
-    if (fastboot) { return; }
 
     if (ENV.FB && ENV.FB.skipInit) {
       this.fbInitPromise = Ember.RSVP.Promise.resolve('skip init');
@@ -27,10 +27,12 @@ export default Ember.Service.extend({
         window.FB.init(initSettings);
         Ember.run(null, resolve);
       };
+      if (fastboot) { return; }
       Ember.$.getScript('//connect.facebook.net/en_US/sdk.js', function() {
         // Do nothing here, wait for window.fbAsyncInit to be called.
       });
     }).then(function() {
+      if (fastboot) { return; }
       if (original) {
         window.fbAsyncInit = original;
         window.fbAsyncInit();
@@ -51,6 +53,8 @@ export default Ember.Service.extend({
   },
 
   api(path) {
+    const fastboot = getOwner(this)._lookupFactory('service:fastboot');
+    if (fastboot) { return; }
     var method = 'GET';
     var parameters = {};
     var arg;
