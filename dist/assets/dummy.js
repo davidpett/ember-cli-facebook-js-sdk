@@ -36,10 +36,10 @@ define('dummy/controllers/object', ['exports', 'ember'], function (exports, _emb
   exports['default'] = _ember['default'].Controller;
 });
 define('dummy/ember-cli-facebook-js-sdk/tests/modules/ember-cli-facebook-js-sdk/services/fb.jshint', ['exports'], function (exports) {
-  QUnit.module('JSHint - modules/ember-cli-facebook-js-sdk/services');
-  QUnit.test('modules/ember-cli-facebook-js-sdk/services/fb.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - modules/ember-cli-facebook-js-sdk/services/fb.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
-    assert.ok(false, 'modules/ember-cli-facebook-js-sdk/services/fb.js should pass jshint.\nmodules/ember-cli-facebook-js-sdk/services/fb.js: line 18, col 5, Forgotten \'debugger\' statement?\n\n1 error');
+    assert.ok(true, 'modules/ember-cli-facebook-js-sdk/services/fb.js should pass jshint.');
   });
 });
 define('dummy/initializers/app-version', ['exports', 'ember-cli-app-version/initializer-factory', 'dummy/config/environment'], function (exports, _emberCliAppVersionInitializerFactory, _dummyConfigEnvironment) {
@@ -54,6 +54,18 @@ define('dummy/initializers/export-application-global', ['exports', 'ember', 'dum
   function initialize() {
     var application = arguments[1] || arguments[0];
     if (_dummyConfigEnvironment['default'].exportApplicationGlobal !== false) {
+      var theGlobal;
+      if (typeof window !== 'undefined') {
+        theGlobal = window;
+      } else if (typeof global !== 'undefined') {
+        theGlobal = global;
+      } else if (typeof self !== 'undefined') {
+        theGlobal = self;
+      } else {
+        // no reasonable global, just bail
+        return;
+      }
+
       var value = _dummyConfigEnvironment['default'].exportApplicationGlobal;
       var globalName;
 
@@ -63,13 +75,13 @@ define('dummy/initializers/export-application-global', ['exports', 'ember', 'dum
         globalName = _ember['default'].String.classify(_dummyConfigEnvironment['default'].modulePrefix);
       }
 
-      if (!window[globalName]) {
-        window[globalName] = application;
+      if (!theGlobal[globalName]) {
+        theGlobal[globalName] = application;
 
         application.reopen({
           willDestroy: function willDestroy() {
             this._super.apply(this, arguments);
-            delete window[globalName];
+            delete theGlobal[globalName];
           }
         });
       }
@@ -82,6 +94,86 @@ define('dummy/initializers/export-application-global', ['exports', 'ember', 'dum
     initialize: initialize
   };
 });
+define("dummy/instance-initializers/browser/clear-double-boot", ["exports"], function (exports) {
+  /*globals Ember*/
+
+  // When using `ember fastboot --serve-assets` the application output will
+  // already be rendered to the DOM when the actual JavaScript loads. Ember
+  // does not automatically clear its `rootElement` so this leads to the
+  // "double" applications being visible at once (only the "bottom" one is
+  // running via JS and is interactive).
+  //
+  // This removes any pre-rendered ember-view elements, so that the booting
+  // application will replace the pre-rendered output
+
+  exports["default"] = {
+    name: "clear-double-boot",
+
+    initialize: function initialize(instance) {
+      var originalDidCreateRootView = instance.didCreateRootView;
+
+      instance.didCreateRootView = function () {
+        var elements = document.querySelectorAll(instance.rootElement + ' .ember-view');
+        for (var i = 0; i < elements.length; i++) {
+          var element = elements[i];
+          element.parentNode.removeChild(element);
+        }
+
+        originalDidCreateRootView.apply(instance, arguments);
+      };
+    }
+  };
+});
+define('dummy/locations/none', ['exports', 'ember'], function (exports, _ember) {
+  var computed = _ember['default'].computed;
+  var reads = _ember['default'].computed.reads;
+  var service = _ember['default'].inject.service;
+  var get = _ember['default'].get;
+  var getOwner = _ember['default'].getOwner;
+  exports['default'] = _ember['default'].NoneLocation.extend({
+    implementation: 'fastboot',
+    fastboot: service(),
+
+    _fastbootHeadersEnabled: computed(function () {
+      var config = getOwner(this).resolveRegistration('config:environment');
+      return !!get(config, 'fastboot.fastbootHeaders');
+    }),
+
+    _redirectCode: computed(function () {
+      var TEMPORARY_REDIRECT_CODE = 307;
+      var config = getOwner(this).resolveRegistration('config:environment');
+      return get(config, 'fastboot.redirectCode') || TEMPORARY_REDIRECT_CODE;
+    }),
+
+    _response: reads('fastboot.response'),
+    _request: reads('fastboot.request'),
+
+    setURL: function setURL(path) {
+      if (get(this, 'fastboot.isFastBoot')) {
+        var currentPath = get(this, 'path');
+        var isInitialPath = !currentPath || currentPath.length === 0;
+        var isTransitioning = currentPath !== path;
+        var response = get(this, '_response');
+
+        if (isTransitioning && !isInitialPath) {
+          var protocol = get(this, '_request.protocol');
+          var host = get(this, '_request.host');
+          var redirectURL = protocol + '://' + host + path;
+
+          response.statusCode = this.get('_redirectCode');
+          response.headers.set('location', redirectURL);
+        }
+
+        // for testing and debugging
+        if (get(this, '_fastbootHeadersEnabled')) {
+          response.headers.set('x-fastboot-path', path);
+        }
+      }
+
+      this._super.apply(this, arguments);
+    }
+  });
+});
 define('dummy/router', ['exports', 'ember', 'dummy/config/environment'], function (exports, _ember, _dummyConfigEnvironment) {
 
   var Router = _ember['default'].Router.extend({
@@ -92,6 +184,114 @@ define('dummy/router', ['exports', 'ember', 'dummy/config/environment'], functio
 
   exports['default'] = Router;
 });
+define('dummy/services/fastboot', ['exports', 'ember'], function (exports, _ember) {
+  var deprecate = _ember['default'].deprecate;
+  var computed = _ember['default'].computed;
+  var get = _ember['default'].get;
+  var deprecatingAlias = computed.deprecatingAlias;
+  var readOnly = computed.readOnly;
+
+  var RequestObject = _ember['default'].Object.extend({
+    init: function init() {
+      this._super.apply(this, arguments);
+
+      var request = this.request;
+      delete this.request;
+
+      this.cookies = request.cookies;
+      this.headers = request.headers;
+      this.queryParams = request.queryParams;
+      this.path = request.path;
+      this.protocol = request.protocol;
+      this._host = function () {
+        return request.host();
+      };
+    },
+
+    host: computed(function () {
+      return this._host();
+    })
+  });
+
+  var Shoebox = _ember['default'].Object.extend({
+    put: function put(key, value) {
+      _ember['default'].assert('shoebox.put is only invoked from the FastBoot rendered application', this.get('fastboot.isFastBoot'));
+      _ember['default'].assert('the provided key is a string', typeof key === 'string');
+
+      var fastbootInfo = this.get('fastboot._fastbootInfo');
+      if (!fastbootInfo.shoebox) {
+        fastbootInfo.shoebox = {};
+      }
+
+      fastbootInfo.shoebox[key] = value;
+    },
+
+    retrieve: function retrieve(key) {
+      if (this.get('fastboot.isFastBoot')) {
+        var shoebox = this.get('fastboot._fastbootInfo.shoebox');
+        if (!shoebox) {
+          return;
+        }
+
+        return shoebox[key];
+      }
+
+      var shoeboxItem = this.get(key);
+      if (shoeboxItem) {
+        return shoeboxItem;
+      }
+
+      var el = document.querySelector('#shoebox-' + key);
+      if (!el) {
+        return;
+      }
+      var valueString = el.textContent;
+      if (!valueString) {
+        return;
+      }
+
+      shoeboxItem = JSON.parse(valueString);
+      this.set(key, shoeboxItem);
+
+      return shoeboxItem;
+    }
+  });
+
+  exports['default'] = _ember['default'].Service.extend({
+    cookies: deprecatingAlias('request.cookies', { id: 'fastboot.cookies-to-request', until: '0.9.9' }),
+    headers: deprecatingAlias('request.headers', { id: 'fastboot.headers-to-request', until: '0.9.9' }),
+
+    init: function init() {
+      this._super.apply(this, arguments);
+
+      var shoebox = Shoebox.create({ fastboot: this });
+      this.set('shoebox', shoebox);
+    },
+
+    host: computed(function () {
+      deprecate('Usage of fastboot service\'s `host` property is deprecated.  Please use `request.host` instead.', false, { id: 'fastboot.host-to-request', until: '0.9.9' });
+
+      return this._fastbootInfo.request.host();
+    }),
+
+    response: readOnly('_fastbootInfo.response'),
+
+    request: computed(function () {
+      if (!get(this, 'isFastBoot')) return null;
+      return RequestObject.create({ request: get(this, '_fastbootInfo.request') });
+    }),
+
+    isFastBoot: computed(function () {
+      return typeof FastBoot !== 'undefined';
+    }),
+
+    deferRendering: function deferRendering(promise) {
+      _ember['default'].assert('deferRendering requires a promise or thennable object', typeof promise.then === 'function');
+      this._fastbootInfo.deferRendering(promise);
+    }
+  });
+});
+/* global FastBoot */
 define('dummy/services/fb', ['exports', 'ember-cli-facebook-js-sdk/services/fb'], function (exports, _emberCliFacebookJsSdkServicesFb) {
   Object.defineProperty(exports, 'default', {
     enumerable: true,
@@ -104,11 +304,7 @@ define("dummy/templates/application", ["exports"], function (exports) {
   exports["default"] = Ember.HTMLBars.template((function () {
     return {
       meta: {
-        "fragmentReason": {
-          "name": "missing-wrapper",
-          "problems": ["multiple-nodes", "wrong-type"]
-        },
-        "revision": "Ember@2.2.0",
+        "revision": "Ember@2.8.2",
         "loc": {
           "source": null,
           "start": {
@@ -146,7 +342,7 @@ define("dummy/templates/application", ["exports"], function (exports) {
         morphs[0] = dom.createMorphAt(fragment, 2, 2, contextualElement);
         return morphs;
       },
-      statements: [["content", "outlet", ["loc", [null, [3, 0], [3, 10]]]]],
+      statements: [["content", "outlet", ["loc", [null, [3, 0], [3, 10]]], 0, 0, 0, 0]],
       locals: [],
       templates: []
     };
@@ -178,8 +374,20 @@ catch(err) {
 });
 
 if (!runningTests) {
-  require("dummy/app")["default"].create({"name":"ember-cli-facebook-js-sdk","version":"1.0.0+712cb473"});
+  require("dummy/app")["default"].create({"name":"ember-cli-facebook-js-sdk","version":"1.0.4+8c9d275c"});
 }
+
+define('~fastboot/app-factory', ['dummy/app', 'dummy/config/environment'], function(App, config) {
+  App = App['default'];
+  config = config['default'];
+
+  return {
+    'default': function() {
+      return App.create(config.APP);
+    }
+  };
+});
+
 
 /* jshint ignore:end */
 //# sourceMappingURL=dummy.map

@@ -1,8 +1,8 @@
 define('dummy/tests/app.jshint', ['exports'], function (exports) {
   'use strict';
 
-  QUnit.module('JSHint - .');
-  QUnit.test('app.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - app.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
     assert.ok(true, 'app.js should pass jshint.');
   });
@@ -17,8 +17,8 @@ define('dummy/tests/helpers/destroy-app', ['exports', 'ember'], function (export
 define('dummy/tests/helpers/destroy-app.jshint', ['exports'], function (exports) {
   'use strict';
 
-  QUnit.module('JSHint - helpers');
-  QUnit.test('helpers/destroy-app.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - helpers/destroy-app.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
     assert.ok(true, 'helpers/destroy-app.js should pass jshint.');
   });
@@ -49,8 +49,8 @@ define('dummy/tests/helpers/module-for-acceptance', ['exports', 'qunit', 'dummy/
 define('dummy/tests/helpers/module-for-acceptance.jshint', ['exports'], function (exports) {
   'use strict';
 
-  QUnit.module('JSHint - helpers');
-  QUnit.test('helpers/module-for-acceptance.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - helpers/module-for-acceptance.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
     assert.ok(true, 'helpers/module-for-acceptance.js should pass jshint.');
   });
@@ -69,8 +69,8 @@ define('dummy/tests/helpers/resolver', ['exports', 'ember/resolver', 'dummy/conf
 define('dummy/tests/helpers/resolver.jshint', ['exports'], function (exports) {
   'use strict';
 
-  QUnit.module('JSHint - helpers');
-  QUnit.test('helpers/resolver.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - helpers/resolver.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
     assert.ok(true, 'helpers/resolver.js should pass jshint.');
   });
@@ -96,8 +96,8 @@ define('dummy/tests/helpers/start-app', ['exports', 'ember', 'dummy/app', 'dummy
 define('dummy/tests/helpers/start-app.jshint', ['exports'], function (exports) {
   'use strict';
 
-  QUnit.module('JSHint - helpers');
-  QUnit.test('helpers/start-app.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - helpers/start-app.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
     assert.ok(true, 'helpers/start-app.js should pass jshint.');
   });
@@ -105,8 +105,8 @@ define('dummy/tests/helpers/start-app.jshint', ['exports'], function (exports) {
 define('dummy/tests/router.jshint', ['exports'], function (exports) {
   'use strict';
 
-  QUnit.module('JSHint - .');
-  QUnit.test('router.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - router.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
     assert.ok(true, 'router.js should pass jshint.');
   });
@@ -118,46 +118,10 @@ define('dummy/tests/test-helper', ['exports', 'dummy/tests/helpers/resolver', 'e
 define('dummy/tests/test-helper.jshint', ['exports'], function (exports) {
   'use strict';
 
-  QUnit.module('JSHint - .');
-  QUnit.test('test-helper.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - test-helper.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
     assert.ok(true, 'test-helper.js should pass jshint.');
-  });
-});
-define('dummy/tests/unit/services/fb-skip-init-test', ['exports', 'ember-qunit', 'ember-getowner-polyfill', 'ember'], function (exports, _emberQunit, _emberGetownerPolyfill, _ember) {
-
-  (0, _emberQunit.moduleFor)('service:fb', 'Unit | Service | fb', {
-    beforeEach: function beforeEach() {
-      var owner = (0, _emberGetownerPolyfill['default'])(this.subject());
-      owner.register('config:environment', _ember['default'].Object.extend({
-        FB: {
-          skipInit: true
-        }
-      }));
-    }
-  });
-
-  (0, _emberQunit.test)('it exists', function (assert) {
-    var service = this.subject();
-    assert.ok(service);
-  });
-
-  (0, _emberQunit.test)('init get skipped', function (assert) {
-    assert.expect(2);
-
-    this.subject().FBInit().then(function (response) {
-      assert.ok(response);
-      assert.equal(response, 'skip init');
-    });
-  });
-});
-define('dummy/tests/unit/services/fb-skip-init-test.jshint', ['exports'], function (exports) {
-  'use strict';
-
-  QUnit.module('JSHint - unit/services');
-  QUnit.test('unit/services/fb-skip-init-test.js should pass jshint', function (assert) {
-    assert.expect(1);
-    assert.ok(true, 'unit/services/fb-skip-init-test.js should pass jshint.');
   });
 });
 define('dummy/tests/unit/services/fb-test', ['exports', 'ember-qunit', 'ember-getowner-polyfill', 'ember'], function (exports, _emberQunit, _emberGetownerPolyfill, _ember) {
@@ -165,21 +129,58 @@ define('dummy/tests/unit/services/fb-test', ['exports', 'ember-qunit', 'ember-ge
   (0, _emberQunit.moduleFor)('service:fb', 'Unit | Service | fb', {
     beforeEach: function beforeEach() {
       var owner = (0, _emberGetownerPolyfill['default'])(this.subject());
-      owner.register('config:environment', _ember['default'].Object.extend({
+      window.FB = undefined;
+      owner.register('config:environment', _ember['default'].Object.create({
         FB: {
-          init: {
-            appId: '1565218020393850',
-            version: 'v2.5'
-          }
+          appId: 'YOUR-APP-ID',
+          version: 'v2.5'
         }
       }));
-      this.subject().setAccessToken('CAAWPjrgaA3oBAAWhkqZCZBufzhrei4fv7YNWJhDYBDBHFpoY4QPx6TAsnZAxE6qIVHD7NWQh3du6V5rVkVNKrG4QYL3IGfPCdJg456ZCIILLr2WmcdkKmwM9mGpHgPg1E4dZBhxpFtrp8sEf6WKF04g4ewVKddzwg4nphsmtnXDoU9cOTZB919IwScOnZClC5pu5k9hCIFZAuaRw6LDXl8sWoq6hSBZBzvrEZD');
+
+      this.subject().setAccessToken('YOUR-FB-TOKEN');
     }
   });
 
   (0, _emberQunit.test)('it exists', function (assert) {
     var service = this.subject();
     assert.ok(service);
+  });
+
+  (0, _emberQunit.test)('FBInit define FB on window', function (assert) {
+    assert.expect(1);
+
+    return this.subject().FBInit({
+      appId: 'YOUR-APP-ID',
+      version: 'v2.5'
+    }).then(function () {
+      assert.ok(window.FB);
+    });
+  });
+
+  (0, _emberQunit.test)('fails with no app ID', function (assert) {
+    assert.expect(1);
+
+    var owner = (0, _emberGetownerPolyfill['default'])(this.subject());
+    owner.register('config:environment', _ember['default'].Object.create());
+    return this.subject().FBInit()['catch'](function (reason) {
+      assert.ok(reason);
+    });
+  });
+
+  (0, _emberQunit.test)('init get skipped', function (assert) {
+    assert.expect(2);
+    var subject = this.subject();
+    var owner = (0, _emberGetownerPolyfill['default'])(subject);
+    owner.register('config:environment', _ember['default'].Object.create({
+      FB: {
+        skipInit: true
+      }
+    }));
+
+    subject.FBInit().then(function (response) {
+      assert.ok(response);
+      assert.equal(response, 'skip init');
+    });
   });
 
   (0, _emberQunit.test)('get user data', function (assert) {
@@ -200,12 +201,117 @@ define('dummy/tests/unit/services/fb-test', ['exports', 'ember-qunit', 'ember-ge
       assert.ok(reason);
     });
   });
+
+  (0, _emberQunit.test)('getLoginStatus', function (assert) {
+    assert.expect(1);
+    var subject = this.subject();
+    var owner = (0, _emberGetownerPolyfill['default'])(subject);
+    owner.register('config:environment', _ember['default'].Object.create({
+      FB: {
+        skipInit: true
+      }
+    }));
+
+    window.FB = {
+      getLoginStatus: function getLoginStatus(f) {
+        assert.ok('calls FB.getLoginStatus');
+        f.call(window, 'OK');
+      }
+    };
+
+    return subject.getLoginStatus();
+  });
+
+  (0, _emberQunit.test)('login', function (assert) {
+    assert.expect(1);
+    var subject = this.subject();
+    var owner = (0, _emberGetownerPolyfill['default'])(subject);
+    owner.register('config:environment', _ember['default'].Object.create({
+      FB: {
+        skipInit: true
+      }
+    }));
+
+    window.FB = {
+      login: function login(f) {
+        assert.ok('calls FB.login');
+        f.call(window, {
+          authResponse: {
+            accessToken: 'foo'
+          }
+        });
+      }
+    };
+
+    return subject.login();
+  });
+
+  (0, _emberQunit.test)('login when it fails', function (assert) {
+    assert.expect(2);
+    var subject = this.subject();
+    var owner = (0, _emberGetownerPolyfill['default'])(subject);
+    owner.register('config:environment', _ember['default'].Object.create({
+      FB: {
+        skipInit: true
+      }
+    }));
+
+    window.FB = {
+      login: function login(f) {
+        assert.ok('calls FB.login');
+        f.call(window, 'foo');
+      }
+    };
+
+    return subject.login()['catch'](function () {
+      assert.ok('rejects');
+    });
+  });
+
+  (0, _emberQunit.test)('logout', function (assert) {
+    assert.expect(1);
+    var subject = this.subject();
+    var owner = (0, _emberGetownerPolyfill['default'])(subject);
+    owner.register('config:environment', _ember['default'].Object.create({
+      FB: {
+        skipInit: true
+      }
+    }));
+
+    window.FB = {
+      logout: function logout(f) {
+        assert.ok('calls FB.logout');
+        f.call(window, 'OK');
+      }
+    };
+
+    return subject.logout();
+  });
+
+  (0, _emberQunit.test)('getAuthResponse', function (assert) {
+    assert.expect(1);
+    var subject = this.subject();
+    var owner = (0, _emberGetownerPolyfill['default'])(subject);
+    owner.register('config:environment', _ember['default'].Object.create({
+      FB: {
+        skipInit: true
+      }
+    }));
+
+    window.FB = {
+      getAuthResponse: function getAuthResponse() {
+        assert.ok('calls FB.getAuthResponse');
+      }
+    };
+
+    subject.getAuthResponse();
+  });
 });
 define('dummy/tests/unit/services/fb-test.jshint', ['exports'], function (exports) {
   'use strict';
 
-  QUnit.module('JSHint - unit/services');
-  QUnit.test('unit/services/fb-test.js should pass jshint', function (assert) {
+  QUnit.module('JSHint - unit/services/fb-test.js');
+  QUnit.test('should pass jshint', function (assert) {
     assert.expect(1);
     assert.ok(true, 'unit/services/fb-test.js should pass jshint.');
   });

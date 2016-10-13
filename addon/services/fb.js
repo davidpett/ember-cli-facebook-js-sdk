@@ -54,7 +54,8 @@ export default Ember.Service.extend({
 
   api(path) {
     const fastboot = getOwner(this)._lookupFactory('service:fastboot');
-    if (fastboot) { return; }
+    console.log(fastboot);
+    if (fastboot) { return Ember.RSVP.reject('we are in fastboot'); }
     var method = 'GET';
     var parameters = {};
     var arg;
